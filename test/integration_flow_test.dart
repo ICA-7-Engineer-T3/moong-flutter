@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hello_flutter/services/database_helper.dart';
-import 'package:hello_flutter/database/user_dao.dart';
-import 'package:hello_flutter/database/moong_dao.dart';
-import 'package:hello_flutter/database/quest_dao.dart';
-import 'package:hello_flutter/database/shop_item_dao.dart';
-import 'package:hello_flutter/database/user_inventory_dao.dart';
-import 'package:hello_flutter/database/chat_message_dao.dart';
-import 'package:hello_flutter/models/user.dart';
-import 'package:hello_flutter/models/moong.dart';
-import 'package:hello_flutter/models/quest.dart';
-import 'package:hello_flutter/models/shop_item.dart';
-import 'package:hello_flutter/models/chat_message.dart';
-import 'package:hello_flutter/services/seed_data_service.dart';
+import 'package:moong_flutter/services/database_helper.dart';
+import 'package:moong_flutter/database/user_dao.dart';
+import 'package:moong_flutter/database/moong_dao.dart';
+import 'package:moong_flutter/database/quest_dao.dart';
+import 'package:moong_flutter/database/shop_item_dao.dart';
+import 'package:moong_flutter/database/user_inventory_dao.dart';
+import 'package:moong_flutter/database/chat_message_dao.dart';
+import 'package:moong_flutter/models/user.dart';
+import 'package:moong_flutter/models/moong.dart';
+import 'package:moong_flutter/models/quest.dart';
+import 'package:moong_flutter/models/shop_item.dart';
+import 'package:moong_flutter/models/chat_message.dart';
+import 'package:moong_flutter/services/seed_data_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {

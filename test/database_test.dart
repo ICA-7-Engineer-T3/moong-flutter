@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hello_flutter/services/database_helper.dart';
-import 'package:hello_flutter/database/user_dao.dart';
-import 'package:hello_flutter/database/moong_dao.dart';
-import 'package:hello_flutter/models/user.dart';
-import 'package:hello_flutter/models/moong.dart';
+import 'package:moong_flutter/services/database_helper.dart';
+import 'package:moong_flutter/database/user_dao.dart';
+import 'package:moong_flutter/database/moong_dao.dart';
+import 'package:moong_flutter/models/user.dart';
+import 'package:moong_flutter/models/moong.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
