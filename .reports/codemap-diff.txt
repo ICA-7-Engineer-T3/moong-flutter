@@ -1,0 +1,144 @@
+================================================================================
+CODEMAP DIFF REPORT
+================================================================================
+
+Generated: 2026-02-06 16:44 UTC
+Project: Moong Flutter (AI Pet Companion)
+Branch: feat/production-readiness
+
+--------------------------------------------------------------------------------
+SUMMARY
+--------------------------------------------------------------------------------
+
+Status: NEW CODEMAPS CREATED (no previous version to compare)
+Change Type: Initial creation
+Total Files: 4 codemaps generated
+
+Codemaps Generated:
+  - architecture.md (2,142 bytes)
+  - backend.md (7,821 bytes)
+  - frontend.md (9,248 bytes)
+  - data.md (9,703 bytes)
+
+Total Size: 28,914 bytes
+
+--------------------------------------------------------------------------------
+CODEMAP DETAILS
+--------------------------------------------------------------------------------
+
+1. architecture.md
+   Purpose: High-level system architecture and design patterns
+   Sections:
+     - Architecture diagram (4 layers)
+     - Design patterns (Provider, Repository, Layered)
+     - Key technologies (Flutter, Firebase, Provider)
+     - Data flow explanation
+     - File structure overview
+     - Recent changes (Firebase migration)
+     - Module count (73 files)
+
+2. backend.md
+   Purpose: Data layer (repositories, models, services)
+   Sections:
+     - Repository pattern architecture
+     - 6 repository interfaces with method signatures
+     - 6 Firestore implementations (71 total methods)
+     - Firestore data model structure
+     - 6 model descriptions with Firestore serialization
+     - Services (FirestoreSeedService)
+     - Design decisions and rationale
+
+3. frontend.md
+   Purpose: Presentation layer (screens, widgets, providers)
+   Sections:
+     - UI architecture diagram
+     - 39 screen breakdown by feature
+     - 6 reusable widget descriptions
+     - 6 provider state management details
+     - Constants (colors, dimensions, strings)
+     - Recent UI improvements (deduplication)
+     - Routing table (45 routes)
+
+4. data.md
+   Purpose: Domain models and data structures
+   Sections:
+     - 6 model specifications with field details
+     - Enum definitions (MoongType, QuestType, ShopCategory, Currency)
+     - Firestore document structure examples
+     - Data serialization patterns
+     - Derived data structures (UserInventoryItem)
+     - Data validation and immutability
+     - Recent model changes
+
+--------------------------------------------------------------------------------
+KEY INSIGHTS
+--------------------------------------------------------------------------------
+
+Architecture Highlights:
+  - Layered architecture: Presentation → Logic → Data → Persistence
+  - Repository pattern for data abstraction
+  - Provider pattern for state management
+  - Firebase backend (Auth + Firestore)
+
+Module Count:
+  - Total files: 73 in lib/
+  - Screens: 39 UI components
+  - Providers: 6 state managers
+  - Repositories: 6 interfaces + 6 implementations
+  - Models: 6 domain entities
+  - Widgets: 6 reusable components
+  - Constants: 3 files
+  - Services: 1 seed service
+
+Recent Migration (Firebase):
+  - Phases 0-7: 88% complete
+  - Phase 8: 20% complete (1/6 providers tested)
+  - Code reduction: -4,677 lines (SQLite removal)
+  - Code added: +472 lines (new tests)
+  - 8 commits total
+
+Data Model:
+  - 6 core entities with Firestore serialization
+  - 4 enums for type safety
+  - Immutable update patterns (copyWith)
+  - Subcollection structure for user isolation
+  - Shared catalog (ShopItems root collection)
+
+UI Components:
+  - 39 screens organized by feature
+  - 6 reusable widgets (87% code reduction for backgrounds)
+  - 6 state providers with cross-communication
+  - 45 named routes
+  - Material Design 3
+
+Backend:
+  - 71 repository methods total
+  - 18 catalog items seeded
+  - Firestore offline persistence enabled
+  - Testable repositories (accept custom Firestore instance)
+
+--------------------------------------------------------------------------------
+CHANGE ANALYSIS
+--------------------------------------------------------------------------------
+
+Previous Version: N/A (first codemap generation)
+Current Version: Initial creation
+Change Percentage: 100% (new)
+
+No diff comparison available - this is the baseline.
+
+Next Update: Run /update-codemaps again after significant codebase changes.
+
+--------------------------------------------------------------------------------
+RECOMMENDATIONS
+--------------------------------------------------------------------------------
+
+1. Review codemaps for accuracy and completeness
+2. Update codemaps after completing Phase 8 (test migration)
+3. Update when adding new features or major refactoring
+4. Keep codemaps token-lean (focus on structure, not implementation)
+5. Target update frequency: After 30%+ codebase changes
+
+--------------------------------------------------------------------------------
+END OF REPORT
+================================================================================
