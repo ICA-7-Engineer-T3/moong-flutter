@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/shop_item.dart';
-import '../database/user_inventory_dao.dart';
+import '../repositories/interfaces/inventory_repository.dart';
+import '../repositories/interfaces/shop_item_repository.dart';
 
 class InventoryProvider with ChangeNotifier {
-  final UserInventoryDao _inventoryDao = UserInventoryDao();
+  final InventoryRepository _inventoryRepository;
+  final ShopItemRepository _shopItemRepository;
   List<ShopItem> _ownedItems = [];
   bool _isLoading = false;
   String? _userId;
@@ -12,19 +13,29 @@ class InventoryProvider with ChangeNotifier {
   List<ShopItem> get ownedItems => List.unmodifiable(_ownedItems);
   bool get isLoading => _isLoading;
 
-  Future<void> initialize(String userId) async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping inventory database operations');
-      _isLoading = false;
-      return;
-    }
+  InventoryProvider({
+    required InventoryRepository inventoryRepository,
+    required ShopItemRepository shopItemRepository,
+  })  : _inventoryRepository = inventoryRepository,
+        _shopItemRepository = shopItemRepository;
 
+  Future<void> initialize(String userId) async {
     _userId = userId;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _ownedItems = await _inventoryDao.getUserInventoryItems(userId);
+      // Get inventory items (just the references)
+      final inventoryItems = await _inventoryRepository.getInventoryByUser(userId);
+
+      // Fetch full shop item details for each inventory item
+      _ownedItems = [];
+      for (final invItem in inventoryItems) {
+        final shopItem = await _shopItemRepository.getShopItem(invItem.shopItemId);
+        if (shopItem != null) {
+          _ownedItems.add(shopItem);
+        }
+      }
     } catch (e) {
       debugPrint('Error loading inventory: $e');
     } finally {
@@ -38,23 +49,23 @@ class InventoryProvider with ChangeNotifier {
   }
 
   Future<void> addItem(String shopItemId) async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping inventory add');
-      return;
-    }
-
     if (_userId == null) {
       debugPrint('Cannot add item: userId is null');
       return;
     }
 
     try {
-      await _inventoryDao.addToInventory(_userId!, shopItemId);
-      // Reload inventory to get the full ShopItem with JOIN
-      _ownedItems = await _inventoryDao.getUserInventoryItems(_userId!);
-      notifyListeners();
+      await _inventoryRepository.addItem(_userId!, shopItemId);
+
+      // Fetch the shop item details and add to list
+      final shopItem = await _shopItemRepository.getShopItem(shopItemId);
+      if (shopItem != null) {
+        _ownedItems = [..._ownedItems, shopItem];
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Error adding item to inventory: $e');
+      rethrow;
     }
   }
 

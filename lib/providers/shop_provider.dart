@@ -1,32 +1,28 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/shop_item.dart';
-import '../database/shop_item_dao.dart';
+import '../repositories/interfaces/shop_item_repository.dart';
 
 class ShopProvider with ChangeNotifier {
-  final ShopItemDao _shopItemDao = ShopItemDao();
+  final ShopItemRepository _shopItemRepository;
   List<ShopItem> _items = [];
   bool _isLoading = false;
 
   List<ShopItem> get items => List.unmodifiable(_items);
   bool get isLoading => _isLoading;
 
+  ShopProvider({required ShopItemRepository shopItemRepository})
+      : _shopItemRepository = shopItemRepository;
+
   List<ShopItem> getItemsByCategory(ShopCategory category) {
     return _items.where((item) => item.category == category).toList();
   }
 
   Future<void> initialize() async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping shop database operations');
-      _isLoading = false;
-      return;
-    }
-
     _isLoading = true;
     notifyListeners();
 
     try {
-      _items = await _shopItemDao.getAllShopItems();
+      _items = await _shopItemRepository.getAllShopItems();
     } catch (e) {
       debugPrint('Error loading shop items: $e');
     } finally {
@@ -49,14 +45,9 @@ class ShopProvider with ChangeNotifier {
       return false;
     }
 
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping purchase database operations');
-      return false;
-    }
-
     try {
       // Verify the item exists in the shop
-      final shopItem = await _shopItemDao.getShopItem(item.id);
+      final shopItem = await _shopItemRepository.getShopItem(item.id);
       if (shopItem == null) {
         debugPrint('Shop item not found: ${item.id}');
         return false;
@@ -76,7 +67,7 @@ class ShopProvider with ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error during purchase: $e');
-      return false;
+      rethrow;
     }
   }
 }

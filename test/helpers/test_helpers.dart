@@ -41,8 +41,8 @@ User createTestUser({
 /// Wrap a widget with required providers for widget testing.
 ///
 /// TODO(Phase 8): Update to use Firebase Auth mocks and Firestore mocks
-/// after Firebase migration is complete. For now, AuthProvider cannot
-/// be instantiated without Firebase Auth and UserRepository dependencies.
+/// after Firebase migration is complete. For now, providers cannot
+/// be instantiated without Firestore repository dependencies.
 Widget wrapWithProviders(
   Widget child, {
   AuthProvider? authProvider,
@@ -50,16 +50,18 @@ Widget wrapWithProviders(
   List<ChangeNotifierProvider>? additionalProviders,
 }) {
   final providers = <ChangeNotifierProvider>[
-    // TODO: Uncomment after Phase 8 - Firebase Auth tests
+    // TODO: Uncomment after Phase 8 - Firebase Auth & Firestore mocks
     // ChangeNotifierProvider<AuthProvider>(
     //   create: (_) => authProvider ?? AuthProvider(
     //     firebaseAuth: MockFirebaseAuth(),
     //     userRepository: MockUserRepository(),
     //   ),
     // ),
-    ChangeNotifierProvider<MoongProvider>(
-      create: (_) => moongProvider ?? MoongProvider(),
-    ),
+    // ChangeNotifierProvider<MoongProvider>(
+    //   create: (_) => moongProvider ?? MoongProvider(
+    //     moongRepository: MockMoongRepository(),
+    //   ),
+    // ),
     ...?additionalProviders,
   ];
 

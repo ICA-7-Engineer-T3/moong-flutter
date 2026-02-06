@@ -1,12 +1,10 @@
 import 'dart:math';
-
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
-import '../database/chat_message_dao.dart';
+import '../repositories/interfaces/chat_message_repository.dart';
 
 class ChatProvider with ChangeNotifier {
-  final ChatMessageDao _chatMessageDao = ChatMessageDao();
+  final ChatMessageRepository _chatMessageRepository;
   List<ChatMessage> _messages = [];
   bool _isLoading = false;
   String? _userId;
@@ -23,21 +21,19 @@ class ChatProvider with ChangeNotifier {
     '잘했어! 너는 대단해',
   ];
 
+  ChatProvider({required ChatMessageRepository chatMessageRepository})
+      : _chatMessageRepository = chatMessageRepository;
+
   Future<void> initialize(String userId, String moongId) async {
     _userId = userId;
     _moongId = moongId;
-
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping chat database operations');
-      _isLoading = false;
-      return;
-    }
 
     _isLoading = true;
     notifyListeners();
 
     try {
-      final recentMessages = await _chatMessageDao.getRecentMessages(
+      final recentMessages = await _chatMessageRepository.getRecentChatMessages(
+        userId,
         moongId,
         50,
       );
@@ -56,62 +52,55 @@ class ChatProvider with ChangeNotifier {
       return;
     }
 
-    final userMessage = ChatMessage(
-      userId: _userId!,
-      moongId: _moongId!,
-      message: text,
-      isUser: true,
-    );
+    try {
+      final userMessage = ChatMessage(
+        userId: _userId!,
+        moongId: _moongId!,
+        message: text,
+        isUser: true,
+      );
 
-    if (!kIsWeb) {
-      try {
-        await _chatMessageDao.insertMessage(userMessage);
-      } catch (e) {
-        debugPrint('Error inserting user message: $e');
-      }
+      await _chatMessageRepository.createChatMessage(_userId!, userMessage);
+
+      _messages = [..._messages, userMessage];
+      notifyListeners();
+
+      // Simulate AI response after a delay
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      final responseText = _generateResponse();
+      final aiMessage = ChatMessage(
+        userId: _userId!,
+        moongId: _moongId!,
+        message: responseText,
+        isUser: false,
+      );
+
+      await _chatMessageRepository.createChatMessage(_userId!, aiMessage);
+
+      _messages = [..._messages, aiMessage];
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+      rethrow;
     }
-
-    _messages = [..._messages, userMessage];
-    notifyListeners();
-
-    // Simulate AI response after a delay
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    final responseText = _generateResponse();
-    final aiMessage = ChatMessage(
-      userId: _userId!,
-      moongId: _moongId!,
-      message: responseText,
-      isUser: false,
-    );
-
-    if (!kIsWeb) {
-      try {
-        await _chatMessageDao.insertMessage(aiMessage);
-      } catch (e) {
-        debugPrint('Error inserting AI message: $e');
-      }
-    }
-
-    _messages = [..._messages, aiMessage];
-    notifyListeners();
   }
 
   Future<void> loadMoreMessages({int limit = 20}) async {
-    if (kIsWeb || _moongId == null) return;
+    if (_userId == null || _moongId == null) return;
 
     _isLoading = true;
     notifyListeners();
 
     try {
-      final olderMessages = await _chatMessageDao.getMessagesByMoong(
+      final olderMessages = await _chatMessageRepository.getChatMessagesPage(
+        _userId!,
         _moongId!,
-        limit: limit,
-        offset: _messages.length,
+        _messages.length,
+        limit,
       );
-      // olderMessages come in DESC order from DAO, reverse for chronological
-      final chronological = olderMessages.reversed.toList();
-      _messages = [...chronological, ..._messages];
+
+      _messages = [...olderMessages, ..._messages];
     } catch (e) {
       debugPrint('Error loading more messages: $e');
     } finally {
@@ -121,26 +110,22 @@ class ChatProvider with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> getConversationStats() async {
-    if (kIsWeb || _moongId == null) {
+    if (_userId == null || _moongId == null) {
       return {
-        'total_messages': 0,
-        'user_messages': 0,
-        'moong_messages': 0,
-        'first_message_time': null,
-        'last_message_time': null,
+        'total': 0,
+        'user': 0,
+        'bot': 0,
       };
     }
 
     try {
-      return await _chatMessageDao.getConversationStats(_moongId!);
+      return await _chatMessageRepository.getConversationStats(_userId!, _moongId!);
     } catch (e) {
       debugPrint('Error getting conversation stats: $e');
       return {
-        'total_messages': 0,
-        'user_messages': 0,
-        'moong_messages': 0,
-        'first_message_time': null,
-        'last_message_time': null,
+        'total': 0,
+        'user': 0,
+        'bot': 0,
       };
     }
   }

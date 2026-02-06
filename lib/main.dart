@@ -8,6 +8,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart' as app;
 import 'repositories/firestore/user_repository_firestore.dart';
+import 'repositories/firestore/moong_repository_firestore.dart';
+import 'repositories/firestore/quest_repository_firestore.dart';
+import 'repositories/firestore/shop_item_repository_firestore.dart';
+import 'repositories/firestore/inventory_repository_firestore.dart';
+import 'repositories/firestore/chat_message_repository_firestore.dart';
 import 'providers/moong_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/quest_provider.dart';
@@ -121,6 +126,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Create repository instances
+    final shopItemRepository = ShopItemRepositoryFirestore();
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -129,11 +137,32 @@ class MyApp extends StatelessWidget {
             userRepository: UserRepositoryFirestore(),
           ),
         ),
-        ChangeNotifierProvider(create: (_) => MoongProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProvider(create: (_) => QuestProvider()),
-        ChangeNotifierProvider(create: (_) => ShopProvider()),
-        ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        ChangeNotifierProvider(
+          create: (_) => MoongProvider(
+            moongRepository: MoongRepositoryFirestore(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => QuestProvider(
+            questRepository: QuestRepositoryFirestore(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ShopProvider(
+            shopItemRepository: shopItemRepository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => InventoryProvider(
+            inventoryRepository: InventoryRepositoryFirestore(),
+            shopItemRepository: shopItemRepository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(
+            chatMessageRepository: ChatMessageRepositoryFirestore(),
+          ),
+        ),
       ],
       child: Builder(
         builder: (context) => const _AppInitializer(),

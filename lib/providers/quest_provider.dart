@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/quest.dart';
-import '../database/quest_dao.dart';
+import '../repositories/interfaces/quest_repository.dart';
 
 class QuestProvider with ChangeNotifier {
-  final QuestDao _questDao = QuestDao();
+  final QuestRepository _questRepository;
   List<Quest> _quests = [];
   bool _isLoading = false;
   String? _userId;
@@ -18,7 +17,8 @@ class QuestProvider with ChangeNotifier {
   List<Quest> get completedQuests =>
       _quests.where((q) => q.completed).toList();
 
-  QuestProvider();
+  QuestProvider({required QuestRepository questRepository})
+      : _questRepository = questRepository;
 
   Future<void> initialize(String userId) async {
     _userId = userId;
@@ -26,12 +26,6 @@ class QuestProvider with ChangeNotifier {
   }
 
   Future<void> loadQuests() async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping database operations');
-      _isLoading = false;
-      return;
-    }
-
     if (_userId == null) {
       debugPrint('Cannot load quests: userId is null');
       return;
@@ -41,7 +35,7 @@ class QuestProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _quests = await _questDao.getQuestsByUserId(_userId!);
+      _quests = await _questRepository.getQuestsByUser(_userId!);
     } catch (e) {
       debugPrint('Error loading quests: $e');
     } finally {
@@ -51,13 +45,13 @@ class QuestProvider with ChangeNotifier {
   }
 
   Future<void> updateProgress(String questId, int progress) async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping database operations');
+    if (_userId == null) {
+      debugPrint('Cannot update progress: userId is null');
       return;
     }
 
     try {
-      await _questDao.updateQuestProgress(questId, progress);
+      await _questRepository.updateQuestProgress(_userId!, questId, progress);
 
       final index = _quests.indexWhere((q) => q.id == questId);
       if (index != -1) {
@@ -70,6 +64,7 @@ class QuestProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error updating quest progress: $e');
+      rethrow;
     }
   }
 
@@ -78,13 +73,13 @@ class QuestProvider with ChangeNotifier {
     Function(int sprouts)? onSproutsEarned,
     Function(String moongId, int intimacyIncrease)? onIntimacyEarned,
   }) async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping database operations');
+    if (_userId == null) {
+      debugPrint('Cannot complete quest: userId is null');
       return;
     }
 
     try {
-      await _questDao.completeQuest(questId);
+      await _questRepository.completeQuest(_userId!, questId);
 
       final now = DateTime.now();
       final index = _quests.indexWhere((q) => q.id == questId);
@@ -111,15 +106,11 @@ class QuestProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error completing quest: $e');
+      rethrow;
     }
   }
 
   Future<void> createDailyQuests(String userId, String? moongId) async {
-    if (kIsWeb) {
-      debugPrint('Web platform - skipping database operations');
-      return;
-    }
-
     final now = DateTime.now();
     final targets = [3000, 7000, 10000];
 
@@ -137,11 +128,12 @@ class QuestProvider with ChangeNotifier {
     }).toList();
 
     try {
-      await _questDao.insertQuests(dailyQuests);
+      await _questRepository.createQuests(userId, dailyQuests);
       _userId = userId;
       await loadQuests();
     } catch (e) {
       debugPrint('Error creating daily quests: $e');
+      rethrow;
     }
   }
 }
