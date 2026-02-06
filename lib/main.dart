@@ -58,6 +58,7 @@ import 'screens/forest_background_screen.dart';
 import 'screens/beach_background_screen.dart';
 import 'screens/space_background_screen.dart';
 import 'screens/sakura_background_screen.dart';
+import 'screens/test_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,11 +93,14 @@ void main() async {
   final firestoreSeedService = FirestoreSeedService(
     shopItemRepository: shopItemRepository,
   );
-  try {
-    await firestoreSeedService.seedShopItems();
-  } catch (e) {
-    debugPrint('Firestore seed data error: $e');
-  }
+
+  // TODO: Re-enable seed after debugging
+  // try {
+  //   await firestoreSeedService.seedShopItems();
+  // } catch (e) {
+  //   debugPrint('Firestore seed data error: $e');
+  // }
+  debugPrint('⏭️  Skipping seed data (debugging)');
 
   runApp(MyApp(shopItemRepository: shopItemRepository));
 }
@@ -216,6 +220,7 @@ class _AppInitializerState extends State<_AppInitializer> {
       ),
       initialRoute: '/',
       routes: {
+          '/test': (context) => const TestScreen(),
           '/': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/moong-select': (context) => const MoongSelectScreen(),

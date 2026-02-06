@@ -159,7 +159,7 @@ void main() {
 
     test('should handle signup failure gracefully', () async {
       // MockFirebaseAuth doesn't fail, so we test with invalid input
-      final result = await authProvider.signup('', '', '');
+      await authProvider.signup('', '', '');
 
       // Either succeeds with empty values or fails - both are handled
       expect(authProvider.isLoading, isFalse);
