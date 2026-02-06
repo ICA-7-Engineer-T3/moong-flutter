@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,7 +17,6 @@ import 'providers/chat_provider.dart';
 import 'providers/quest_provider.dart';
 import 'providers/shop_provider.dart';
 import 'providers/inventory_provider.dart';
-import 'services/migration_service.dart';
 import 'services/firestore_seed_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -90,25 +87,7 @@ void main() async {
     debugPrint('Firestore persistence error: $e');
   }
 
-  // Initialize sqflite for desktop platforms only (temporary - will be removed in Phase 7)
-  // Web is not supported for SQLite yet - needs alternative implementation
-  if (!kIsWeb) {
-    // For desktop (macOS, Windows, Linux)
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
-
-  // Run SQLite migration only on non-web platforms (temporary - will be removed in Phase 7)
-  if (!kIsWeb) {
-    final migrationService = MigrationService();
-    try {
-      await migrationService.migrateFromSharedPreferences();
-    } catch (e) {
-      debugPrint('Migration error: $e');
-    }
-  }
-
-  // Seed initial Firestore data (shop items) - works on all platforms including web
+  // Seed initial Firestore data (shop items)
   final shopItemRepository = ShopItemRepositoryFirestore();
   final firestoreSeedService = FirestoreSeedService(
     shopItemRepository: shopItemRepository,

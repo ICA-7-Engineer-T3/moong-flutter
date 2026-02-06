@@ -1,10 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moong_flutter/providers/auth_provider.dart';
-import 'package:moong_flutter/models/user.dart';
-import 'package:moong_flutter/database/user_dao.dart';
-import 'package:moong_flutter/services/database_helper.dart';
-import '../helpers/test_helpers.dart';
 
 // TODO(Phase 8): Rewrite ALL AuthProvider tests with Firebase Auth mocks
 //

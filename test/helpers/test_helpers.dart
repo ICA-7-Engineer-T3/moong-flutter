@@ -1,25 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:moong_flutter/providers/auth_provider.dart';
 import 'package:moong_flutter/providers/moong_provider.dart';
-import 'package:moong_flutter/services/database_helper.dart';
 import 'package:moong_flutter/models/user.dart';
 
-/// Initialize sqflite_ffi for desktop test environments.
-void initTestDatabase() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-}
-
-/// Create a fresh database, deleting any existing one.
-Future<DatabaseHelper> createFreshDatabase() async {
-  final dbHelper = DatabaseHelper.instance;
-  await dbHelper.deleteDb();
-  return dbHelper;
-}
+// TODO(Phase 8): Remove SQLite test helpers, replace with Firestore mocks
+// These functions are no longer usable after SQLite removal
 
 /// Create a test user with sensible defaults.
 User createTestUser({
