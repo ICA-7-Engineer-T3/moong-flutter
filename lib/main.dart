@@ -1,11 +1,23 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'providers/auth_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
+import 'providers/auth_provider.dart' as app;
+import 'repositories/interfaces/shop_item_repository.dart';
+import 'repositories/firestore/user_repository_firestore.dart';
+import 'repositories/firestore/moong_repository_firestore.dart';
+import 'repositories/firestore/quest_repository_firestore.dart';
+import 'repositories/firestore/shop_item_repository_firestore.dart';
+import 'repositories/firestore/inventory_repository_firestore.dart';
+import 'repositories/firestore/chat_message_repository_firestore.dart';
 import 'providers/moong_provider.dart';
-import 'services/migration_service.dart';
-import 'services/seed_data_service.dart';
+import 'providers/chat_provider.dart';
+import 'providers/quest_provider.dart';
+import 'providers/shop_provider.dart';
+import 'providers/inventory_provider.dart';
+import 'services/firestore_seed_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/moong_select_screen.dart';
@@ -49,48 +61,92 @@ import 'screens/sakura_background_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize sqflite for desktop platforms only
-  // Web is not supported for SQLite yet - needs alternative implementation
-  if (!kIsWeb) {
-    // For desktop (macOS, Windows, Linux)
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+
+  // Initialize Firebase FIRST
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✓ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
   }
-  
-  // Run migration and seeding only on non-web platforms
-  if (!kIsWeb) {
-    // Run migration from SharedPreferences to SQLite
-    final migrationService = MigrationService();
-    try {
-      await migrationService.migrateFromSharedPreferences();
-    } catch (e) {
-      debugPrint('Migration error: $e');
-    }
-    
-    // Seed initial data (shop items)
-    final seedDataService = SeedDataService();
-    try {
-      await seedDataService.seedShopItems();
-    } catch (e) {
-      debugPrint('Seed data error: $e');
-    }
-  } else {
-    debugPrint('Running on web - SQLite features disabled');
+
+  // Configure Firestore offline persistence
+  try {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Configure cache settings for all platforms
+    // Note: In cloud_firestore 6.x, persistence is enabled by default on web
+    firestore.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+    debugPrint('✓ Firestore persistence configured');
+  } catch (e) {
+    debugPrint('Firestore persistence error: $e');
   }
-  
-  runApp(const MyApp());
+
+  // Seed initial Firestore data (shop items)
+  final shopItemRepository = ShopItemRepositoryFirestore();
+  final firestoreSeedService = FirestoreSeedService(
+    shopItemRepository: shopItemRepository,
+  );
+  try {
+    await firestoreSeedService.seedShopItems();
+  } catch (e) {
+    debugPrint('Firestore seed data error: $e');
+  }
+
+  runApp(MyApp(shopItemRepository: shopItemRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ShopItemRepository shopItemRepository;
+
+  const MyApp({
+    super.key,
+    required this.shopItemRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Create remaining repository instances
+
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MoongProvider()),
+        ChangeNotifierProvider(
+          create: (_) => app.AuthProvider(
+            firebaseAuth: FirebaseAuth.instance,
+            userRepository: UserRepositoryFirestore(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => MoongProvider(
+            moongRepository: MoongRepositoryFirestore(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => QuestProvider(
+            questRepository: QuestRepositoryFirestore(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ShopProvider(
+            shopItemRepository: shopItemRepository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => InventoryProvider(
+            inventoryRepository: InventoryRepositoryFirestore(),
+            shopItemRepository: shopItemRepository,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(
+            chatMessageRepository: ChatMessageRepositoryFirestore(),
+          ),
+        ),
       ],
       child: Builder(
         builder: (context) => const _AppInitializer(),
@@ -116,15 +172,35 @@ class _AppInitializerState extends State<_AppInitializer> {
   Future<void> _initializeProviders() async {
     // Wait for AuthProvider to load user data
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
     if (!mounted) return;
-    
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
     final moongProvider = Provider.of<MoongProvider>(context, listen: false);
-    
-    // If user is already logged in, initialize MoongProvider
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
+
+    // Initialize shop items (available regardless of login)
+    await shopProvider.initialize();
+
+    // If user is already logged in, initialize user-dependent providers
     if (authProvider.currentUser != null) {
-      await moongProvider.initialize(authProvider.currentUser!.id);
+      final userId = authProvider.currentUser!.id;
+      await moongProvider.initialize(userId);
+      await inventoryProvider.initialize(userId);
+
+      if (!mounted) return;
+      final questProvider = Provider.of<QuestProvider>(context, listen: false);
+      await questProvider.initialize(userId);
+
+      if (!mounted) return;
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      if (moongProvider.activeMoong != null) {
+        await chatProvider.initialize(
+          authProvider.currentUser!.id,
+          moongProvider.activeMoong!.id,
+        );
+      }
     }
   }
 
@@ -183,7 +259,7 @@ class _AppInitializerState extends State<_AppInitializer> {
         if (settings.name?.startsWith('/shop-category/') ?? false) {
           final categoryStr = settings.name!.split('/').last;
           final category = ShopCategory.values.firstWhere(
-            (e) => e.toString().split('.').last == categoryStr,
+            (e) => e.name == categoryStr,
             orElse: () => ShopCategory.accessories,
           );
           return MaterialPageRoute(
@@ -191,6 +267,12 @@ class _AppInitializerState extends State<_AppInitializer> {
           );
         }
         return null;
+      },
+      onUnknownRoute: (settings) {
+        debugPrint('Unknown route: ${settings.name}');
+        return MaterialPageRoute(
+          builder: (context) => const SplashScreen(),
+        );
       },
     );
   }

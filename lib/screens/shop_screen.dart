@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/shop_item.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/currency_display.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -43,21 +46,22 @@ class _ShopScreenState extends State<ShopScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top credits row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      _buildCreditContainer(
-                        icon: Icons.eco,
-                        value: '250',
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildCreditContainer(
-                        icon: Icons.monetization_on,
-                        value: '250',
-                        color: Colors.amber,
-                      ),
-                    ],
+                  Builder(
+                    builder: (context) {
+                      final authProvider = Provider.of<AuthProvider>(context);
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          CurrencyDisplay.sprouts(
+                            value: '${authProvider.currentUser?.sprouts ?? 0}',
+                          ),
+                          const SizedBox(width: 16),
+                          CurrencyDisplay.credits(
+                            value: '${authProvider.currentUser?.credits ?? 0}',
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
 
@@ -80,7 +84,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               };
                               Navigator.pushNamed(
                                 context,
-                                '/shop-category/${categoryMap[index].toString().split('.').last}',
+                                '/shop-category/${categoryMap[index]!.name}',
                               );
                             },
                             child: Container(
@@ -186,34 +190,6 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCreditContainer({
-    required IconData icon,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF01020B),
-            ),
-          ),
-        ],
       ),
     );
   }

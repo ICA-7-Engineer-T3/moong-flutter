@@ -1,15 +1,20 @@
+import 'package:flutter/foundation.dart';
 import '../models/shop_item.dart';
-import '../database/shop_item_dao.dart';
+import '../repositories/interfaces/shop_item_repository.dart';
 
-class SeedDataService {
-  final ShopItemDao _shopItemDao = ShopItemDao();
+class FirestoreSeedService {
+  final ShopItemRepository _shopItemRepository;
+
+  FirestoreSeedService({required ShopItemRepository shopItemRepository})
+      : _shopItemRepository = shopItemRepository;
 
   // Seed shop items if not already seeded
   Future<void> seedShopItems() async {
     try {
       // Check if shop items already exist
-      final existingItems = await _shopItemDao.getAllShopItems();
+      final existingItems = await _shopItemRepository.getAllShopItems();
       if (existingItems.isNotEmpty) {
+        debugPrint('Shop items already seeded (${existingItems.length} items)');
         return; // Already seeded
       }
 
@@ -37,7 +42,7 @@ class SeedDataService {
           price: 200,
           currency: Currency.sprout,
         ),
-        
+
         // Accessories
         ShopItem(
           id: 'acc_1',
@@ -60,7 +65,7 @@ class SeedDataService {
           price: 300,
           currency: Currency.credit,
         ),
-        
+
         // Furniture
         ShopItem(
           id: 'furniture_1',
@@ -83,7 +88,7 @@ class SeedDataService {
           price: 600,
           currency: Currency.credit,
         ),
-        
+
         // Backgrounds
         ShopItem(
           id: 'bg_1',
@@ -113,7 +118,7 @@ class SeedDataService {
           price: 350,
           currency: Currency.credit,
         ),
-        
+
         // Season items (locked)
         ShopItem(
           id: 'season_1',
@@ -142,19 +147,27 @@ class SeedDataService {
       ];
 
       // Batch insert all items
-      await _shopItemDao.insertShopItems(items);
-      
-      print('✅ Successfully seeded ${items.length} shop items');
+      await _shopItemRepository.createShopItems(items);
+
+      debugPrint('✓ Successfully seeded ${items.length} shop items to Firestore');
     } catch (e) {
-      print('❌ Error seeding shop items: $e');
+      debugPrint('Error seeding shop items to Firestore: $e');
       rethrow;
     }
   }
 
   // Clear all shop items (for testing)
   Future<void> clearShopItems() async {
-    await _shopItemDao.clearAllShopItems();
-    print('🗑️ Cleared all shop items');
+    try {
+      final items = await _shopItemRepository.getAllShopItems();
+      for (final item in items) {
+        await _shopItemRepository.deleteShopItem(item.id);
+      }
+      debugPrint('Cleared all shop items from Firestore');
+    } catch (e) {
+      debugPrint('Error clearing shop items: $e');
+      rethrow;
+    }
   }
 
   // Re-seed shop items (clear and seed again)

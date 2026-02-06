@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/moong_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/top_bar.dart';
+import '../widgets/bottom_navigation.dart';
 
 class MainMoongScreen extends StatefulWidget {
   const MainMoongScreen({super.key});
@@ -42,7 +44,6 @@ class _MainMoongScreenState extends State<MainMoongScreen>
   @override
   Widget build(BuildContext context) {
     final moongProvider = Provider.of<MoongProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
     final activeMoong = moongProvider.activeMoong;
 
     return Scaffold(
@@ -66,34 +67,10 @@ class _MainMoongScreenState extends State<MainMoongScreen>
               // Top bar
               Positioned(
                 top: 6,
-                left: 18,
-                right: 18,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        _buildIconButton(
-                          Icons.settings_outlined,
-                          () => Navigator.pushNamed(context, '/settings'),
-                        ),
-                        const SizedBox(width: 18),
-                        _buildIconButton(
-                          Icons.home_outlined,
-                          () => Navigator.pushReplacementNamed(context, '/'),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${authProvider.currentUser?.level ?? 1}',
-                      style: const TextStyle(
-                        fontFamily: 'Inder',
-                        fontSize: 45,
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                left: 0,
+                right: 0,
+                child: TopBar(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
                 ),
               ),
 
@@ -184,45 +161,38 @@ class _MainMoongScreenState extends State<MainMoongScreen>
                 bottom: 20,
                 left: 0,
                 right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavButton(
-                      Icons.restaurant_outlined,
-                      '먹이주기',
-                      () => Navigator.pushNamed(context, '/food'),
+                child: BottomNavigation(
+                  items: [
+                    NavItem(
+                      icon: Icons.restaurant_outlined,
+                      label: '먹이주기',
+                      onTap: () => Navigator.pushNamed(context, '/food'),
                     ),
-                    _buildNavButton(
-                      Icons.chat_bubble_outline,
-                      '대화하기',
-                      () => Navigator.pushNamed(context, '/chat'),
+                    NavItem(
+                      icon: Icons.chat_bubble_outline,
+                      label: '대화하기',
+                      onTap: () => Navigator.pushNamed(context, '/chat'),
                     ),
-                    _buildNavButton(
-                      Icons.fitness_center_outlined,
-                      '퀘스트',
-                      () => Navigator.pushNamed(context, '/quest'),
+                    NavItem(
+                      icon: Icons.fitness_center_outlined,
+                      label: '퀘스트',
+                      onTap: () => Navigator.pushNamed(context, '/quest'),
                     ),
                   ],
                 ),
               ),
 
-              // Back button
+              // Back and Garden buttons (overlaying the bottom navigation)
               Positioned(
-                left: 27,
-                bottom: 27,
-                child: _buildIconButton(
-                  Icons.arrow_back,
-                  () => Navigator.pop(context),
-                ),
-              ),
-
-              // Garden button
-              Positioned(
-                right: 27,
-                bottom: 27,
-                child: _buildIconButton(
-                  Icons.yard_outlined,
-                  () => Navigator.pushNamed(context, '/garden'),
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: BottomNavigation(
+                  layout: 'split',
+                  showBackButton: true,
+                  showGardenButton: true,
+                  items: const [],
+                  padding: const EdgeInsets.only(bottom: 27),
                 ),
               ),
             ],
@@ -293,66 +263,4 @@ class _MainMoongScreenState extends State<MainMoongScreen>
     );
   }
 
-  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 83,
-        height: 83,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 15,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 40, color: const Color(0xFF2E7D32)),
-      ),
-    );
-  }
-
-  Widget _buildNavButton(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 83,
-            height: 83,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF66BB6A),
-                  const Color(0xFF43A047),
-                ],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF43A047).withValues(alpha: 0.4),
-                  blurRadius: 15,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Icon(icon, size: 40, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF2E7D32),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ChatMessage {
-  final int? id;
+  final int? id; // For SQLite (auto-increment integer)
+  final String? firestoreId; // For Firestore (document ID string)
   final String userId;
   final String moongId;
   final String message;
@@ -8,6 +11,7 @@ class ChatMessage {
 
   ChatMessage({
     this.id,
+    this.firestoreId,
     required this.userId,
     required this.moongId,
     required this.message,
@@ -17,6 +21,7 @@ class ChatMessage {
 
   ChatMessage copyWith({
     int? id,
+    String? firestoreId,
     String? userId,
     String? moongId,
     String? message,
@@ -25,6 +30,7 @@ class ChatMessage {
   }) {
     return ChatMessage(
       id: id ?? this.id,
+      firestoreId: firestoreId ?? this.firestoreId,
       userId: userId ?? this.userId,
       moongId: moongId ?? this.moongId,
       message: message ?? this.message,
@@ -99,9 +105,34 @@ class ChatMessage {
   @override
   int get hashCode {
     return id.hashCode ^
+        firestoreId.hashCode ^
         userId.hashCode ^
         moongId.hashCode ^
         message.hashCode ^
         isUser.hashCode;
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'moongId': moongId,
+      'message': message,
+      'isUser': isUser,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
+  factory ChatMessage.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc, String userId) {
+    final data = doc.data();
+    if (data == null) throw Exception('ChatMessage document is null');
+
+    return ChatMessage(
+      firestoreId: doc.id,
+      userId: userId,
+      moongId: data['moongId'] as String,
+      message: data['message'] as String,
+      isUser: data['isUser'] as bool,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+    );
   }
 }

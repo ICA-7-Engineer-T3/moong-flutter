@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/shop_item.dart';
 import '../providers/auth_provider.dart';
+import '../providers/shop_provider.dart';
 
 class ShopCategoryScreen extends StatelessWidget {
   final ShopCategory category;
@@ -76,11 +77,11 @@ class ShopCategoryScreen extends StatelessWidget {
                       mainAxisSpacing: 20,
                       childAspectRatio: 0.75,
                     ),
-                    itemCount: _getCategoryItems(category).length,
+                    itemCount: _getCategoryItems(context, category).length,
                     itemBuilder: (context, index) {
                       return _buildItemCard(
                         context,
-                        _getCategoryItems(category)[index],
+                        _getCategoryItems(context, category)[index],
                       );
                     },
                   ),
@@ -135,19 +136,16 @@ class ShopCategoryScreen extends StatelessWidget {
     }
   }
 
-  List<ShopItem> _getCategoryItems(ShopCategory category) {
-    // Mock data
-    return List.generate(
-      8,
-      (index) => ShopItem(
-        id: '${category.toString()}_$index',
-        name: '${_getCategoryName(category)} ${index + 1}',
-        price: (index + 1) * 100,
-        currency: index % 2 == 0 ? Currency.sprout : Currency.credit,
-        category: category,
-        unlockDays: index > 3 ? (index - 3) * 2 : null,
-      ),
-    );
+  List<ShopItem> _getCategoryItems(BuildContext context, ShopCategory category) {
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final items = shopProvider.getItemsByCategory(category);
+
+    // Fall back to empty list if provider has no data yet
+    if (items.isEmpty) {
+      return [];
+    }
+
+    return items;
   }
 
   Widget _buildCategoryTabs(BuildContext context) {

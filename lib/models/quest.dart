@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum QuestType {
   walk, // 걷기 퀘스트
 }
@@ -5,6 +7,7 @@ enum QuestType {
 class Quest {
   final String id;
   final String userId;
+  final String? moongId;
   final QuestType type;
   final int target; // 목표 (3000, 7000, 10000)
   final int progress; // 현재 진행도
@@ -15,6 +18,7 @@ class Quest {
   Quest({
     required this.id,
     required this.userId,
+    this.moongId,
     required this.type,
     required this.target,
     this.progress = 0,
@@ -28,6 +32,7 @@ class Quest {
   Quest copyWith({
     String? id,
     String? userId,
+    String? moongId,
     QuestType? type,
     int? target,
     int? progress,
@@ -38,6 +43,7 @@ class Quest {
     return Quest(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      moongId: moongId ?? this.moongId,
       type: type ?? this.type,
       target: target ?? this.target,
       progress: progress ?? this.progress,
@@ -51,7 +57,8 @@ class Quest {
     return {
       'id': id,
       'userId': userId,
-      'type': type.toString().split('.').last,
+      'moongId': moongId,
+      'type': type.name,
       'target': target,
       'progress': progress,
       'completed': completed,
@@ -65,7 +72,8 @@ class Quest {
     return {
       'id': id,
       'user_id': userId,
-      'type': type.toString().split('.').last,
+      'moong_id': moongId,
+      'type': type.name,
       'target': target,
       'progress': progress,
       'completed': completed ? 1 : 0,
@@ -78,8 +86,9 @@ class Quest {
     return Quest(
       id: json['id'] as String,
       userId: json['userId'] as String,
+      moongId: json['moongId'] as String?,
       type: QuestType.values.firstWhere(
-        (e) => e.toString().split('.').last == json['type'],
+        (e) => e.name == json['type'],
       ),
       target: json['target'] as int,
       progress: json['progress'] as int? ?? 0,
@@ -96,8 +105,9 @@ class Quest {
     return Quest(
       id: map['id'] as String,
       userId: map['user_id'] as String,
+      moongId: map['moong_id'] as String?,
       type: QuestType.values.firstWhere(
-        (e) => e.toString().split('.').last == map['type'],
+        (e) => e.name == map['type'],
       ),
       target: map['target'] as int,
       progress: map['progress'] as int? ?? 0,
@@ -124,5 +134,37 @@ class Quest {
 
   String getTargetText() {
     return '$target보';
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'moongId': moongId,
+      'type': type.name,
+      'target': target,
+      'progress': progress,
+      'completed': completed,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+    };
+  }
+
+  factory Quest.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc, String userId) {
+    final data = doc.data();
+    if (data == null) throw Exception('Quest document is null');
+
+    return Quest(
+      id: doc.id,
+      userId: userId,
+      moongId: data['moongId'] as String?,
+      type: QuestType.values.firstWhere((e) => e.name == data['type']),
+      target: data['target'] as int,
+      progress: data['progress'] as int? ?? 0,
+      completed: data['completed'] as bool? ?? false,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      completedAt: data['completedAt'] != null
+          ? (data['completedAt'] as Timestamp).toDate()
+          : null,
+    );
   }
 }

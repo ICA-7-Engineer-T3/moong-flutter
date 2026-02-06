@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum ShopCategory {
   clothes, // 의류
   accessories, // 잡화
@@ -35,10 +37,10 @@ class ShopItem {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'category': category.toString().split('.').last,
+      'category': category.name,
       'name': name,
       'price': price,
-      'currency': currency.toString().split('.').last,
+      'currency': currency.name,
       'imageUrl': imageUrl,
       'unlockDays': unlockDays,
     };
@@ -48,10 +50,10 @@ class ShopItem {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'category': category.toString().split('.').last,
+      'category': category.name,
       'name': name,
       'price': price,
-      'currency': currency.toString().split('.').last,
+      'currency': currency.name,
       'image_url': imageUrl,
       'unlock_days': unlockDays,
     };
@@ -61,12 +63,12 @@ class ShopItem {
     return ShopItem(
       id: json['id'] as String,
       category: ShopCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == json['category'],
+        (e) => e.name == json['category'],
       ),
       name: json['name'] as String,
       price: json['price'] as int,
       currency: Currency.values.firstWhere(
-        (e) => e.toString().split('.').last == json['currency'],
+        (e) => e.name == json['currency'],
       ),
       imageUrl: json['imageUrl'] as String?,
       unlockDays: json['unlockDays'] as int?,
@@ -78,12 +80,12 @@ class ShopItem {
     return ShopItem(
       id: map['id'] as String,
       category: ShopCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == map['category'],
+        (e) => e.name == map['category'],
       ),
       name: map['name'] as String,
       price: map['price'] as int,
       currency: Currency.values.firstWhere(
-        (e) => e.toString().split('.').last == map['currency'],
+        (e) => e.name == map['currency'],
       ),
       imageUrl: map['image_url'] as String?,
       unlockDays: map['unlock_days'] as int?,
@@ -103,5 +105,32 @@ class ShopItem {
       case ShopCategory.season:
         return '시즌';
     }
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'category': category.name,
+      'name': name,
+      'price': price,
+      'currency': currency.name,
+      'imageUrl': imageUrl,
+      'unlockDays': unlockDays,
+    };
+  }
+
+  factory ShopItem.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    if (data == null) throw Exception('ShopItem document is null');
+
+    return ShopItem(
+      id: doc.id,
+      category: ShopCategory.values.firstWhere((e) => e.name == data['category']),
+      name: data['name'] as String,
+      price: data['price'] as int,
+      currency: Currency.values.firstWhere((e) => e.name == data['currency']),
+      imageUrl: data['imageUrl'] as String?,
+      unlockDays: data['unlockDays'] as int?,
+    );
   }
 }
