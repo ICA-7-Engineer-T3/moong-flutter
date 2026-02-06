@@ -85,9 +85,9 @@ void main() {
     });
   });
 
-  group('Session Persistence Tests', () => {
-        testWidgets('App remembers logged in user', (tester) async {
-          // TODO: SharedPreferences 등을 mock하여 테스트
-        })
-      });
+  group('Session Persistence Tests', () {
+    testWidgets('App remembers logged in user', (tester) async {
+      // TODO: SharedPreferences 등을 mock하여 테스트
+    });
+  });
 }

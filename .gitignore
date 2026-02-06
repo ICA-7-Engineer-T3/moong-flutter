@@ -60,3 +60,9 @@ tests/.auth/
 
 # Build artifacts
 .build/
+
+# Debug artifacts
+tests/*.txt
+tests/*.png
+tests/debug_app.js
+debug_chrome.js
