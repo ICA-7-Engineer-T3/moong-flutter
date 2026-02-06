@@ -14,6 +14,12 @@ migrate_working_dir/
 # Claude Code
 .claude/
 
+# Firebase credentials (CRITICAL - never commit)
+*firebase*adminsdk*.json
+*.firebase-adminsdk.json
+google-services.json
+GoogleService-Info.plist
+
 # IntelliJ related
 *.iml
 *.ipr

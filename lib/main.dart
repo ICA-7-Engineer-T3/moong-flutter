@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/moong_provider.dart';
 import 'providers/chat_provider.dart';
@@ -53,16 +56,41 @@ import 'screens/sakura_background_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize sqflite for desktop platforms only
+
+  // Initialize Firebase FIRST
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✓ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
+
+  // Configure Firestore offline persistence
+  try {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Configure cache settings for all platforms
+    // Note: In cloud_firestore 6.x, persistence is enabled by default on web
+    firestore.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+    debugPrint('✓ Firestore persistence configured');
+  } catch (e) {
+    debugPrint('Firestore persistence error: $e');
+  }
+
+  // Initialize sqflite for desktop platforms only (temporary - will be removed in Phase 7)
   // Web is not supported for SQLite yet - needs alternative implementation
   if (!kIsWeb) {
     // For desktop (macOS, Windows, Linux)
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  
-  // Run migration and seeding only on non-web platforms
+
+  // Run migration and seeding only on non-web platforms (temporary - will be removed in Phase 7)
   if (!kIsWeb) {
     // Run migration from SharedPreferences to SQLite
     final migrationService = MigrationService();
@@ -71,7 +99,7 @@ void main() async {
     } catch (e) {
       debugPrint('Migration error: $e');
     }
-    
+
     // Seed initial data (shop items)
     final seedDataService = SeedDataService();
     try {
@@ -82,7 +110,7 @@ void main() async {
   } else {
     debugPrint('Running on web - SQLite features disabled');
   }
-  
+
   runApp(const MyApp());
 }
 
