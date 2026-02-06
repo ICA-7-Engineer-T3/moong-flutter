@@ -3,10 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:moong_flutter/main.dart';
 import 'package:moong_flutter/providers/auth_provider.dart';
 import 'package:moong_flutter/providers/moong_provider.dart';
+import 'package:moong_flutter/repositories/firestore/shop_item_repository_firestore.dart';
 
 void main() {
   testWidgets('MyApp smoke test - app renders without crash', (tester) async {
-    await tester.pumpWidget(const MyApp());
+    // Create repository instance for testing
+    final shopItemRepository = ShopItemRepositoryFirestore();
+
+    await tester.pumpWidget(MyApp(shopItemRepository: shopItemRepository));
     await tester.pump(const Duration(milliseconds: 300));
 
     // The app should render the MaterialApp with routes
@@ -15,7 +19,10 @@ void main() {
 
   testWidgets('MyApp initializes with AuthProvider and MoongProvider',
       (tester) async {
-    await tester.pumpWidget(const MyApp());
+    // Create repository instance for testing
+    final shopItemRepository = ShopItemRepositoryFirestore();
+
+    await tester.pumpWidget(MyApp(shopItemRepository: shopItemRepository));
     await tester.pump(const Duration(milliseconds: 300));
 
     // Verify providers are accessible in widget tree

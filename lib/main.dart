@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart' as app;
+import 'repositories/interfaces/shop_item_repository.dart';
 import 'repositories/firestore/user_repository_firestore.dart';
 import 'repositories/firestore/moong_repository_firestore.dart';
 import 'repositories/firestore/quest_repository_firestore.dart';
@@ -19,7 +20,7 @@ import 'providers/quest_provider.dart';
 import 'providers/shop_provider.dart';
 import 'providers/inventory_provider.dart';
 import 'services/migration_service.dart';
-import 'services/seed_data_service.dart';
+import 'services/firestore_seed_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/moong_select_screen.dart';
@@ -97,37 +98,41 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
-  // Run migration and seeding only on non-web platforms (temporary - will be removed in Phase 7)
+  // Run SQLite migration only on non-web platforms (temporary - will be removed in Phase 7)
   if (!kIsWeb) {
-    // Run migration from SharedPreferences to SQLite
     final migrationService = MigrationService();
     try {
       await migrationService.migrateFromSharedPreferences();
     } catch (e) {
       debugPrint('Migration error: $e');
     }
-
-    // Seed initial data (shop items)
-    final seedDataService = SeedDataService();
-    try {
-      await seedDataService.seedShopItems();
-    } catch (e) {
-      debugPrint('Seed data error: $e');
-    }
-  } else {
-    debugPrint('Running on web - SQLite features disabled');
   }
 
-  runApp(const MyApp());
+  // Seed initial Firestore data (shop items) - works on all platforms including web
+  final shopItemRepository = ShopItemRepositoryFirestore();
+  final firestoreSeedService = FirestoreSeedService(
+    shopItemRepository: shopItemRepository,
+  );
+  try {
+    await firestoreSeedService.seedShopItems();
+  } catch (e) {
+    debugPrint('Firestore seed data error: $e');
+  }
+
+  runApp(MyApp(shopItemRepository: shopItemRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ShopItemRepository shopItemRepository;
+
+  const MyApp({
+    super.key,
+    required this.shopItemRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Create repository instances
-    final shopItemRepository = ShopItemRepositoryFirestore();
+    // Create remaining repository instances
 
     return MultiProvider(
       providers: [
