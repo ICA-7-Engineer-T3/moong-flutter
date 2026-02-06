@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-import 'providers/auth_provider.dart';
+import 'providers/auth_provider.dart' as app;
+import 'repositories/firestore/user_repository_firestore.dart';
 import 'providers/moong_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/quest_provider.dart';
@@ -121,7 +123,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (_) => app.AuthProvider(
+            firebaseAuth: FirebaseAuth.instance,
+            userRepository: UserRepositoryFirestore(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => MoongProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => QuestProvider()),
@@ -152,10 +159,10 @@ class _AppInitializerState extends State<_AppInitializer> {
   Future<void> _initializeProviders() async {
     // Wait for AuthProvider to load user data
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
     if (!mounted) return;
-    
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
     final moongProvider = Provider.of<MoongProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
