@@ -38,11 +38,11 @@ class MigrationService {
     try {
       // Check if migration already completed
       if (await isMigrationCompleted()) {
-        print('Migration already completed, skipping...');
+        debugPrint('Migration already completed, skipping...');
         return;
       }
 
-      print('Starting migration from SharedPreferences to SQLite...');
+      debugPrint('Starting migration from SharedPreferences to SQLite...');
 
       final prefs = await SharedPreferences.getInstance();
 
@@ -55,7 +55,7 @@ class MigrationService {
       // Mark migration as completed
       await _markMigrationCompleted();
 
-      print('Migration completed successfully!');
+      debugPrint('Migration completed successfully!');
     } catch (e) {
       debugPrint('Error during migration: $e');
       rethrow;
@@ -68,7 +68,7 @@ class MigrationService {
       final userJson = prefs.getString('current_user');
       
       if (userJson != null) {
-        print('Migrating user data...');
+        debugPrint('Migrating user data...');
         
         final userMap = jsonDecode(userJson);
         final user = User.fromJson(userMap);
@@ -77,15 +77,15 @@ class MigrationService {
         final existingUser = await _userDao.getUser(user.id);
         if (existingUser == null) {
           await _userDao.insertUser(user);
-          print('User migrated successfully: ${user.nickname}');
+          debugPrint('User migrated successfully: ${user.nickname}');
         } else {
-          print('User already exists in database, skipping...');
+          debugPrint('User already exists in database, skipping...');
         }
 
         // Remove from SharedPreferences after successful migration
         await prefs.remove('current_user');
       } else {
-        print('No user data to migrate');
+        debugPrint('No user data to migrate');
       }
     } catch (e) {
       debugPrint('Error migrating user: $e');
@@ -99,7 +99,7 @@ class MigrationService {
       final moongsJson = prefs.getString('moongs');
       
       if (moongsJson != null) {
-        print('Migrating moong data...');
+        debugPrint('Migrating moong data...');
         
         final List<dynamic> moongsList = jsonDecode(moongsJson);
         final moongs = moongsList.map((json) => Moong.fromJson(json)).toList();
@@ -114,13 +114,13 @@ class MigrationService {
           }
         }
         
-        print('Migrated $migratedCount moong(s) successfully');
+        debugPrint('Migrated $migratedCount moong(s) successfully');
 
         // Remove from SharedPreferences after successful migration
         await prefs.remove('moongs');
         await prefs.remove('active_moong_id');
       } else {
-        print('No moong data to migrate');
+        debugPrint('No moong data to migrate');
       }
     } catch (e) {
       debugPrint('Error migrating moongs: $e');
@@ -133,7 +133,7 @@ class MigrationService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_migrationCompletedKey);
-      print('Migration flag reset');
+      debugPrint('Migration flag reset');
     } catch (e) {
       debugPrint('Error resetting migration: $e');
     }

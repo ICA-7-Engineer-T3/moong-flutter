@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'providers/auth_provider.dart';
 import 'providers/moong_provider.dart';
+import 'providers/chat_provider.dart';
+import 'providers/quest_provider.dart';
+import 'providers/shop_provider.dart';
+import 'providers/inventory_provider.dart';
 import 'services/migration_service.dart';
 import 'services/seed_data_service.dart';
 import 'screens/splash_screen.dart';
@@ -91,6 +95,10 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MoongProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => QuestProvider()),
+        ChangeNotifierProvider(create: (_) => ShopProvider()),
+        ChangeNotifierProvider(create: (_) => InventoryProvider()),
       ],
       child: Builder(
         builder: (context) => const _AppInitializer(),
@@ -121,10 +129,30 @@ class _AppInitializerState extends State<_AppInitializer> {
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final moongProvider = Provider.of<MoongProvider>(context, listen: false);
-    
-    // If user is already logged in, initialize MoongProvider
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
+
+    // Initialize shop items (available regardless of login)
+    await shopProvider.initialize();
+
+    // If user is already logged in, initialize user-dependent providers
     if (authProvider.currentUser != null) {
-      await moongProvider.initialize(authProvider.currentUser!.id);
+      final userId = authProvider.currentUser!.id;
+      await moongProvider.initialize(userId);
+      await inventoryProvider.initialize(userId);
+
+      if (!mounted) return;
+      final questProvider = Provider.of<QuestProvider>(context, listen: false);
+      await questProvider.initialize(userId);
+
+      if (!mounted) return;
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      if (moongProvider.activeMoong != null) {
+        await chatProvider.initialize(
+          authProvider.currentUser!.id,
+          moongProvider.activeMoong!.id,
+        );
+      }
     }
   }
 
@@ -183,7 +211,7 @@ class _AppInitializerState extends State<_AppInitializer> {
         if (settings.name?.startsWith('/shop-category/') ?? false) {
           final categoryStr = settings.name!.split('/').last;
           final category = ShopCategory.values.firstWhere(
-            (e) => e.toString().split('.').last == categoryStr,
+            (e) => e.name == categoryStr,
             orElse: () => ShopCategory.accessories,
           );
           return MaterialPageRoute(
@@ -191,6 +219,12 @@ class _AppInitializerState extends State<_AppInitializer> {
           );
         }
         return null;
+      },
+      onUnknownRoute: (settings) {
+        debugPrint('Unknown route: ${settings.name}');
+        return MaterialPageRoute(
+          builder: (context) => const SplashScreen(),
+        );
       },
     );
   }

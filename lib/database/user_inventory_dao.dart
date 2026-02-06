@@ -110,7 +110,7 @@ class UserInventoryDao {
         INNER JOIN user_inventory ui ON si.id = ui.shop_item_id
         WHERE ui.user_id = ? AND si.category = ?
         ORDER BY ui.purchased_at DESC
-      ''', [userId, category.toString().split('.').last]);
+      ''', [userId, category.name]);
 
       return maps.map((map) => ShopItem.fromMap(map)).toList();
     } catch (e) {

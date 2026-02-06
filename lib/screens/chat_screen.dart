@@ -2,18 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/moong_provider.dart';
-
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-    required this.timestamp,
-  });
-}
+import '../providers/chat_provider.dart';
+import '../models/chat_message.dart';
+import '../widgets/top_bar.dart';
+import '../widgets/bottom_navigation.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -26,8 +18,8 @@ class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
   late AnimationController _typingController;
+  bool _initialMessageSent = false;
 
   @override
   void initState() {
@@ -37,9 +29,21 @@ class _ChatScreenState extends State<ChatScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    // Add initial message
+    // Send initial greeting if no messages exist
     Future.delayed(Duration.zero, () {
-      _addMoongMessage('안녕! 오늘 하루는 어땠어? 😊');
+      if (!mounted) return;
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      if (chatProvider.messages.isEmpty && !_initialMessageSent) {
+        _initialMessageSent = true;
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final moongProvider = Provider.of<MoongProvider>(context, listen: false);
+        if (authProvider.currentUser != null && moongProvider.activeMoong != null) {
+          chatProvider.initialize(
+            authProvider.currentUser!.id,
+            moongProvider.activeMoong!.id,
+          );
+        }
+      }
     });
   }
 
@@ -51,46 +55,16 @@ class _ChatScreenState extends State<ChatScreen>
     super.dispose();
   }
 
-  void _addMoongMessage(String text) {
-    setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
-    });
-    _scrollToBottom();
-  }
-
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
 
     final userMessage = _controller.text.trim();
-    setState(() {
-      _messages.add(ChatMessage(
-        text: userMessage,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
-    });
     _controller.clear();
+
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    chatProvider.sendMessage(userMessage);
+
     _scrollToBottom();
-
-    // Simulate AI response
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      _addMoongMessage(_generateResponse(userMessage));
-    });
-  }
-
-  String _generateResponse(String userMessage) {
-    final responses = [
-      '그렇구나! 네 이야기를 듣고 있어 💚',
-      '정말 그랬구나. 너무 수고했어 🌟',
-      '나도 같은 마음이야. 함께 있어줄게 ✨',
-      '이해해. 언제든 이야기해줘 💙',
-      '잘했어! 너는 대단해 🎉',
-    ];
-    return responses[DateTime.now().millisecond % responses.length];
   }
 
   void _scrollToBottom() {
@@ -107,7 +81,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
     final moongProvider = Provider.of<MoongProvider>(context);
 
     return Scaffold(
@@ -129,34 +102,13 @@ class _ChatScreenState extends State<ChatScreen>
           child: Column(
             children: [
               // Top bar
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        _buildIconButton(
-                          Icons.settings_outlined,
-                          () => Navigator.pushNamed(context, '/settings'),
-                        ),
-                        const SizedBox(width: 18),
-                        _buildIconButton(
-                          Icons.home_outlined,
-                          () => Navigator.pushReplacementNamed(context, '/'),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${authProvider.currentUser?.level ?? 1}',
-                      style: const TextStyle(
-                        fontFamily: 'Inder',
-                        fontSize: 45,
-                        color: Color(0xFFC2185B),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+              TopBar(
+                iconColor: const Color(0xFFC2185B),
+                levelTextStyle: const TextStyle(
+                  fontFamily: 'Inder',
+                  fontSize: 45,
+                  color: Color(0xFFC2185B),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -214,11 +166,16 @@ class _ChatScreenState extends State<ChatScreen>
                     color: Colors.white.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessage(_messages[index]);
+                  child: Consumer<ChatProvider>(
+                    builder: (context, chatProvider, child) {
+                      _scrollToBottom();
+                      return ListView.builder(
+                        controller: _scrollController,
+                        itemCount: chatProvider.messages.length,
+                        itemBuilder: (context, index) {
+                          return _buildMessage(chatProvider.messages[index]);
+                        },
+                      );
                     },
                   ),
                 ),
@@ -280,27 +237,11 @@ class _ChatScreenState extends State<ChatScreen>
               ),
 
               // Bottom navigation
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 27),
-                      child: _buildIconButton(
-                        Icons.arrow_back,
-                        () => Navigator.pop(context),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 27),
-                      child: _buildIconButton(
-                        Icons.yard_outlined,
-                        () => Navigator.pushNamed(context, '/garden'),
-                      ),
-                    ),
-                  ],
-                ),
+              BottomNavigation(
+                layout: 'split',
+                showBackButton: true,
+                showGardenButton: true,
+                items: const [],
               ),
             ],
           ),
@@ -354,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen>
                 ],
               ),
               child: Text(
-                message.text,
+                message.message,
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.black87,
@@ -383,25 +324,4 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
-  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 83,
-        height: 83,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 15,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 40, color: const Color(0xFFC2185B)),
-      ),
-    );
-  }
 }

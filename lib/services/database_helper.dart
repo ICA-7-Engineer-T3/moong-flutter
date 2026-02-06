@@ -25,7 +25,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onConfigure: _onConfigure,
       onUpgrade: _onUpgrade,
@@ -77,6 +77,7 @@ class DatabaseHelper {
       CREATE TABLE quests (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
+        moong_id TEXT,
         type TEXT NOT NULL,
         target INTEGER NOT NULL,
         progress INTEGER NOT NULL DEFAULT 0,
@@ -141,11 +142,9 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database migrations here in the future
-    // Example:
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE users ADD COLUMN new_field TEXT');
-    // }
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE quests ADD COLUMN moong_id TEXT');
+    }
   }
 
   Future<void> close() async {

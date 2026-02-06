@@ -1,30 +1,26 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:provider/provider.dart';
 import 'package:moong_flutter/main.dart';
+import 'package:moong_flutter/providers/auth_provider.dart';
+import 'package:moong_flutter/providers/moong_provider.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('MyApp smoke test - app renders without crash', (tester) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // The app should render the MaterialApp with routes
+    expect(find.byType(MultiProvider), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('MyApp initializes with AuthProvider and MoongProvider',
+      (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify providers are accessible in widget tree
+    final context = tester.element(find.byType(MultiProvider));
+    expect(Provider.of<AuthProvider>(context, listen: false), isNotNull);
+    expect(Provider.of<MoongProvider>(context, listen: false), isNotNull);
   });
 }

@@ -56,27 +56,36 @@ class MoongProvider with ChangeNotifier {
     if (!kIsWeb) {
       await _moongDao.insertMoong(newMoong);
     }
-    _moongs.insert(0, newMoong);
+    _moongs = [newMoong, ..._moongs];
     _activeMoong ??= newMoong;
 
     notifyListeners();
   }
 
   Future<void> setActiveMoong(String moongId) async {
-    final moong = _moongs.firstWhere((m) => m.id == moongId);
-    _activeMoong = moong;
+    final index = _moongs.indexWhere((m) => m.id == moongId);
+    if (index == -1) {
+      debugPrint('Moong with id $moongId not found');
+      return;
+    }
+    _activeMoong = _moongs[index];
     notifyListeners();
   }
 
   Future<void> updateMoongLevel(String moongId, int level) async {
     final index = _moongs.indexWhere((m) => m.id == moongId);
     if (index != -1) {
-      _moongs[index] = _moongs[index].copyWith(level: level);
+      final updatedMoong = _moongs[index].copyWith(level: level);
+      _moongs = [
+        ..._moongs.sublist(0, index),
+        updatedMoong,
+        ..._moongs.sublist(index + 1),
+      ];
       if (!kIsWeb) {
-        await _moongDao.updateMoong(_moongs[index]);
+        await _moongDao.updateMoong(updatedMoong);
       }
       if (_activeMoong?.id == moongId) {
-        _activeMoong = _moongs[index];
+        _activeMoong = updatedMoong;
       }
       notifyListeners();
     }
@@ -85,12 +94,17 @@ class MoongProvider with ChangeNotifier {
   Future<void> updateMoongIntimacy(String moongId, int intimacy) async {
     final index = _moongs.indexWhere((m) => m.id == moongId);
     if (index != -1) {
-      _moongs[index] = _moongs[index].copyWith(intimacy: intimacy);
+      final updatedMoong = _moongs[index].copyWith(intimacy: intimacy);
+      _moongs = [
+        ..._moongs.sublist(0, index),
+        updatedMoong,
+        ..._moongs.sublist(index + 1),
+      ];
       if (!kIsWeb) {
-        await _moongDao.updateMoong(_moongs[index]);
+        await _moongDao.updateMoong(updatedMoong);
       }
       if (_activeMoong?.id == moongId) {
-        _activeMoong = _moongs[index];
+        _activeMoong = updatedMoong;
       }
       notifyListeners();
     }
@@ -99,14 +113,19 @@ class MoongProvider with ChangeNotifier {
   Future<void> graduateMoong(String moongId) async {
     final index = _moongs.indexWhere((m) => m.id == moongId);
     if (index != -1) {
-      _moongs[index] = _moongs[index].copyWith(
+      final updatedMoong = _moongs[index].copyWith(
         graduatedAt: DateTime.now(),
         isActive: false,
       );
+      _moongs = [
+        ..._moongs.sublist(0, index),
+        updatedMoong,
+        ..._moongs.sublist(index + 1),
+      ];
       if (!kIsWeb) {
-        await _moongDao.updateMoong(_moongs[index]);
+        await _moongDao.updateMoong(updatedMoong);
       }
-      
+
       if (_activeMoong?.id == moongId) {
         // 다른 활성 뭉이 있으면 그것을 활성화
         _activeMoong = _moongs.firstWhere(

@@ -80,7 +80,7 @@ class ShopItemDao {
       final maps = await db.query(
         'shop_items',
         where: 'category = ?',
-        whereArgs: [category.toString().split('.').last],
+        whereArgs: [category.name],
         orderBy: 'name',
       );
 
@@ -121,7 +121,7 @@ class ShopItemDao {
       final maps = await db.query(
         'shop_items',
         where: 'category = ? AND (unlock_days IS NULL OR unlock_days <= ?)',
-        whereArgs: [category.toString().split('.').last, currentDay],
+        whereArgs: [category.name, currentDay],
         orderBy: 'name',
       );
 
@@ -139,7 +139,7 @@ class ShopItemDao {
       final maps = await db.query(
         'shop_items',
         where: 'currency = ?',
-        whereArgs: [currency.toString().split('.').last],
+        whereArgs: [currency.name],
         orderBy: 'price',
       );
 
@@ -194,7 +194,7 @@ class ShopItemDao {
       final result = await db.delete(
         'shop_items',
         where: 'category = ?',
-        whereArgs: [category.toString().split('.').last],
+        whereArgs: [category.name],
       );
       return result;
     } catch (e) {
@@ -222,7 +222,7 @@ class ShopItemDao {
         SELECT COUNT(*) as count
         FROM shop_items
         WHERE category = ?
-      ''', [category.toString().split('.').last]);
+      ''', [category.name]);
 
       if (result.isEmpty) return 0;
       return result.first['count'] as int;

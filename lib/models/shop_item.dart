@@ -35,10 +35,10 @@ class ShopItem {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'category': category.toString().split('.').last,
+      'category': category.name,
       'name': name,
       'price': price,
-      'currency': currency.toString().split('.').last,
+      'currency': currency.name,
       'imageUrl': imageUrl,
       'unlockDays': unlockDays,
     };
@@ -48,10 +48,10 @@ class ShopItem {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'category': category.toString().split('.').last,
+      'category': category.name,
       'name': name,
       'price': price,
-      'currency': currency.toString().split('.').last,
+      'currency': currency.name,
       'image_url': imageUrl,
       'unlock_days': unlockDays,
     };
@@ -61,12 +61,12 @@ class ShopItem {
     return ShopItem(
       id: json['id'] as String,
       category: ShopCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == json['category'],
+        (e) => e.name == json['category'],
       ),
       name: json['name'] as String,
       price: json['price'] as int,
       currency: Currency.values.firstWhere(
-        (e) => e.toString().split('.').last == json['currency'],
+        (e) => e.name == json['currency'],
       ),
       imageUrl: json['imageUrl'] as String?,
       unlockDays: json['unlockDays'] as int?,
@@ -78,12 +78,12 @@ class ShopItem {
     return ShopItem(
       id: map['id'] as String,
       category: ShopCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == map['category'],
+        (e) => e.name == map['category'],
       ),
       name: map['name'] as String,
       price: map['price'] as int,
       currency: Currency.values.firstWhere(
-        (e) => e.toString().split('.').last == map['currency'],
+        (e) => e.name == map['currency'],
       ),
       imageUrl: map['image_url'] as String?,
       unlockDays: map['unlock_days'] as int?,

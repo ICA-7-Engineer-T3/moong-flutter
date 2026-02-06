@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/shop_item.dart';
 import '../database/shop_item_dao.dart';
 
@@ -144,9 +145,9 @@ class SeedDataService {
       // Batch insert all items
       await _shopItemDao.insertShopItems(items);
       
-      print('✅ Successfully seeded ${items.length} shop items');
+      debugPrint('Successfully seeded ${items.length} shop items');
     } catch (e) {
-      print('❌ Error seeding shop items: $e');
+      debugPrint('Error seeding shop items: $e');
       rethrow;
     }
   }
@@ -154,7 +155,7 @@ class SeedDataService {
   // Clear all shop items (for testing)
   Future<void> clearShopItems() async {
     await _shopItemDao.clearAllShopItems();
-    print('🗑️ Cleared all shop items');
+    debugPrint('Cleared all shop items');
   }
 
   // Re-seed shop items (clear and seed again)

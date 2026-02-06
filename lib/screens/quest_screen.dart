@@ -1,45 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import '../providers/quest_provider.dart';
 import '../models/quest.dart';
+import '../widgets/top_bar.dart';
+import '../widgets/bottom_navigation.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
-    final quests = [
-      Quest(
-        id: '1',
-        userId: authProvider.currentUser?.id ?? '',
-        type: QuestType.walk,
-        target: 3000,
-        progress: 1200,
-        completed: false,
-        createdAt: DateTime.now(),
-      ),
-      Quest(
-        id: '2',
-        userId: authProvider.currentUser?.id ?? '',
-        type: QuestType.walk,
-        target: 7000,
-        progress: 0,
-        completed: false,
-        createdAt: DateTime.now(),
-      ),
-      Quest(
-        id: '3',
-        userId: authProvider.currentUser?.id ?? '',
-        type: QuestType.walk,
-        target: 10000,
-        progress: 0,
-        completed: false,
-        createdAt: DateTime.now(),
-      ),
-    ];
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -59,36 +29,13 @@ class QuestScreen extends StatelessWidget {
           child: Column(
             children: [
               // Top bar
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        _buildIconButton(
-                          context,
-                          Icons.settings_outlined,
-                          () {},
-                        ),
-                        const SizedBox(width: 18),
-                        _buildIconButton(
-                          context,
-                          Icons.home_outlined,
-                          () {},
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${authProvider.currentUser?.level ?? 1}',
-                      style: const TextStyle(
-                        fontFamily: 'Inder',
-                        fontSize: 45,
-                        color: Color(0xFF1976D2),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+              TopBar(
+                iconColor: const Color(0xFF1976D2),
+                levelTextStyle: const TextStyle(
+                  fontFamily: 'Inder',
+                  fontSize: 45,
+                  color: Color(0xFF1976D2),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -122,41 +69,66 @@ class QuestScreen extends StatelessWidget {
                 ),
               ),
 
-              // Quest cards
+              // Quest cards from provider
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  itemCount: quests.length,
-                  itemBuilder: (context, index) {
-                    return _buildQuestCard(context, quests[index], index);
+                child: Consumer<QuestProvider>(
+                  builder: (context, questProvider, child) {
+                    if (questProvider.isLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF1976D2),
+                        ),
+                      );
+                    }
+
+                    final quests = questProvider.quests;
+
+                    if (quests.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.assignment_outlined,
+                              size: 80,
+                              color: const Color(0xFF1976D2)
+                                  .withValues(alpha: 0.4),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              '아직 퀘스트가 없어요',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1976D2)
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      itemCount: quests.length,
+                      itemBuilder: (context, index) {
+                        return _buildQuestCard(context, quests[index], index);
+                      },
+                    );
                   },
                 ),
               ),
 
               // Bottom navigation
-              Padding(
-                padding: const EdgeInsets.all(27),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildIconButton(
-                      context,
-                      Icons.arrow_back,
-                      () => Navigator.pop(context),
-                    ),
-                    Row(
-                      children: [
-                        _buildIconButton(context, Icons.restaurant_outlined,
-                            () {}),
-                        const SizedBox(width: 20),
-                        _buildIconButton(context, Icons.fitness_center, () {}),
-                        const SizedBox(width: 20),
-                        _buildIconButton(
-                            context, Icons.chat_bubble_outline, () {}),
-                      ],
-                    ),
-                  ],
-                ),
+              BottomNavigation(
+                layout: 'icons-only',
+                showBackButton: true,
+                items: [
+                  NavItem(icon: Icons.restaurant_outlined, label: '', onTap: () {}),
+                  NavItem(icon: Icons.fitness_center, label: '', onTap: () {}),
+                  NavItem(icon: Icons.chat_bubble_outline, label: '', onTap: () {}),
+                ],
               ),
             ],
           ),
@@ -173,6 +145,8 @@ class QuestScreen extends StatelessWidget {
       [const Color(0xFFCE93D8), const Color(0xFFAB47BC)],
     ];
 
+    final colorIndex = index % colors.length;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 30),
       padding: const EdgeInsets.all(30),
@@ -180,13 +154,13 @@ class QuestScreen extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             Colors.white,
-            colors[index][0],
+            colors[colorIndex][0],
           ],
         ),
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: colors[index][1].withValues(alpha: 0.3),
+            color: colors[colorIndex][1].withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -199,34 +173,34 @@ class QuestScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '퀘스트 ${index + 1}',
+                quest.getQuestName(),
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: colors[index][1],
+                  color: colors[colorIndex][1],
                 ),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: colors[index][1].withValues(alpha: 0.2),
+                  color: colors[colorIndex][1].withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.directions_walk,
-                      color: colors[index][1],
+                      color: colors[colorIndex][1],
                       size: 24,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${quest.target.toString()}보',
+                      quest.getTargetText(),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: colors[index][1],
+                        color: colors[colorIndex][1],
                       ),
                     ),
                   ],
@@ -254,7 +228,7 @@ class QuestScreen extends StatelessWidget {
               child: Icon(
                 Icons.pets,
                 size: 120,
-                color: colors[index][1].withValues(alpha: 0.7),
+                color: colors[colorIndex][1].withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -268,7 +242,7 @@ class QuestScreen extends StatelessWidget {
                 '${quest.progress} / ${quest.target}',
                 style: TextStyle(
                   fontSize: 20,
-                  color: colors[index][1],
+                  color: colors[colorIndex][1],
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -279,7 +253,8 @@ class QuestScreen extends StatelessWidget {
                   value: progress,
                   minHeight: 18,
                   backgroundColor: Colors.white.withValues(alpha: 0.5),
-                  valueColor: AlwaysStoppedAnimation<Color>(colors[index][1]),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(colors[colorIndex][1]),
                 ),
               ),
             ],
@@ -289,26 +264,4 @@ class QuestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton(
-      BuildContext context, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 83,
-        height: 83,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 15,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 40, color: const Color(0xFF1976D2)),
-      ),
-    );
-  }
 }
