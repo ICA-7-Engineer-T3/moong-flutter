@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum ShopCategory {
   clothes, // 의류
   accessories, // 잡화
@@ -103,5 +105,32 @@ class ShopItem {
       case ShopCategory.season:
         return '시즌';
     }
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'category': category.name,
+      'name': name,
+      'price': price,
+      'currency': currency.name,
+      'imageUrl': imageUrl,
+      'unlockDays': unlockDays,
+    };
+  }
+
+  factory ShopItem.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    if (data == null) throw Exception('ShopItem document is null');
+
+    return ShopItem(
+      id: doc.id,
+      category: ShopCategory.values.firstWhere((e) => e.name == data['category']),
+      name: data['name'] as String,
+      price: data['price'] as int,
+      currency: Currency.values.firstWhere((e) => e.name == data['currency']),
+      imageUrl: data['imageUrl'] as String?,
+      unlockDays: data['unlockDays'] as int?,
+    );
   }
 }

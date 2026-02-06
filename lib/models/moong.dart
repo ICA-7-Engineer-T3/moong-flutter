@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum MoongType {
   pet, // 펫 뭉 - 공감 100%
   mate, // 메이트 뭉 - 공감 80% 이성 20%
@@ -137,5 +139,37 @@ class Moong {
       case MoongType.guide:
         return '"00한 감정을 느꼈구나! 00방향으로 해볼까?"';
     }
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'type': type.name,
+      'level': level,
+      'intimacy': intimacy,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'graduatedAt': graduatedAt != null ? Timestamp.fromDate(graduatedAt!) : null,
+      'isActive': isActive,
+    };
+  }
+
+  factory Moong.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc, String userId) {
+    final data = doc.data();
+    if (data == null) throw Exception('Moong document is null');
+
+    return Moong(
+      id: doc.id,
+      userId: userId,
+      name: data['name'] as String,
+      type: MoongType.values.firstWhere((e) => e.name == data['type']),
+      level: data['level'] as int? ?? 1,
+      intimacy: data['intimacy'] as int? ?? 0,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      graduatedAt: data['graduatedAt'] != null
+          ? (data['graduatedAt'] as Timestamp).toDate()
+          : null,
+      isActive: data['isActive'] as bool? ?? true,
+    );
   }
 }

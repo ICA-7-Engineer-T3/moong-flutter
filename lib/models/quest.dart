@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum QuestType {
   walk, // 걷기 퀘스트
 }
@@ -132,5 +134,37 @@ class Quest {
 
   String getTargetText() {
     return '$target보';
+  }
+
+  // For Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'moongId': moongId,
+      'type': type.name,
+      'target': target,
+      'progress': progress,
+      'completed': completed,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+    };
+  }
+
+  factory Quest.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc, String userId) {
+    final data = doc.data();
+    if (data == null) throw Exception('Quest document is null');
+
+    return Quest(
+      id: doc.id,
+      userId: userId,
+      moongId: data['moongId'] as String?,
+      type: QuestType.values.firstWhere((e) => e.name == data['type']),
+      target: data['target'] as int,
+      progress: data['progress'] as int? ?? 0,
+      completed: data['completed'] as bool? ?? false,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      completedAt: data['completedAt'] != null
+          ? (data['completedAt'] as Timestamp).toDate()
+          : null,
+    );
   }
 }
